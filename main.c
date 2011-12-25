@@ -97,6 +97,20 @@ int main(void)
 					break;
 				case EnterProgrammer:
 					SendByte(CommandReplyOK);
+					USB_Disable();
+
+					// Disable interrupts...
+					cli();
+
+					// Change back to the application interrupt vector table
+					tmpMCUCR = MCUCR;
+					MCUCR = tmpMCUCR | (1 << IVCE);
+					MCUCR = tmpMCUCR & ~(1 << IVSEL);
+
+					// Wait a little bit to let everything settle and let the program close the port after the USB disconnect
+					_delay_ms(2000);
+
+					// Now run the stored program instead
 					__asm__ __volatile__ ( "jmp 0x0000" );
 					break;
 				default:
