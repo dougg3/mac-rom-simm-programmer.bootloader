@@ -80,4 +80,31 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 		<nature>de.innot.avreclipse.core.avrnature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>Descriptors.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/SIMMProgrammer/Descriptors.c</locationURI>
+		</link>
+		<link>
+			<name>Descriptors.h</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/SIMMProgrammer/Descriptors.h</locationURI>
+		</link>
+		<link>
+			<name>cdc_device_definition.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/SIMMProgrammer/cdc_device_definition.c</locationURI>
+		</link>
+		<link>
+			<name>cdc_device_definition.h</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/SIMMProgrammer/cdc_device_definition.h</locationURI>
+		</link>
+		<link>
+			<name>programmer_protocol.h</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/SIMMProgrammer/programmer_protocol.h</locationURI>
+		</link>
+	</linkedResources>
 </projectDescription>

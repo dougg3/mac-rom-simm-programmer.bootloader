@@ -8,54 +8,8 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include "LUFA/Drivers/USB/USB.h"
-#include "Descriptors.h"
-
-USB_ClassInfo_CDC_Device_t VirtualSerial_CDC_Interface =
-{
-	.Config =
-		{
-			.ControlInterfaceNumber         = 0,
-
-			.DataINEndpointNumber           = CDC_TX_EPNUM,
-			.DataINEndpointSize             = CDC_TXRX_EPSIZE,
-			.DataINEndpointDoubleBank       = true,
-
-			.DataOUTEndpointNumber          = CDC_RX_EPNUM,
-			.DataOUTEndpointSize            = CDC_TXRX_EPSIZE,
-			.DataOUTEndpointDoubleBank      = true,
-
-			.NotificationEndpointNumber     = CDC_NOTIFICATION_EPNUM,
-			.NotificationEndpointSize       = CDC_NOTIFICATION_EPSIZE,
-			.NotificationEndpointDoubleBank = false,
-		},
-};
-
-typedef enum ProgrammerCommand
-{
-	EnterWaitingMode = 0,
-	DoElectricalTest,
-	IdentifyChips,
-	ReadByte,
-	ReadChips,
-	EraseChips,
-	WriteChips,
-	GetBootloaderState,
-	EnterBootloader,
-	EnterProgrammer
-} ProgrammerCommand;
-
-typedef enum ProgrammerReply
-{
-	CommandReplyOK = 0,
-	CommandReplyError,
-	CommandReplyInvalid
-} ProgrammerReply;
-
-typedef enum BootloaderStateReply
-{
-	BootloaderStateInBootloader = 0,
-	BootloaderStateInProgrammer
-} BootloaderStateReply;
+#include "../SIMMProgrammer/cdc_device_definition.h"
+#include "../SIMMProgrammer/programmer_protocol.h"
 
 #define SendByte(b) CDC_Device_SendByte(&VirtualSerial_CDC_Interface, b)
 #define ReadByte() CDC_Device_ReceiveByte(&VirtualSerial_CDC_Interface)
