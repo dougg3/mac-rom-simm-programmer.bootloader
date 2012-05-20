@@ -88,6 +88,12 @@ void HandleWaitingForCommandByte(uint8_t byte)
 		break;
 	case EnterProgrammer:
 		SendByte(CommandReplyOK);
+		CDC_Device_Flush(&VirtualSerial_CDC_Interface);
+
+		// Insert a small delay to ensure that it arrives before rebooting.
+		_delay_ms(1000);
+
+		// Done with the USB interface -- the programmer will re-initialize it.
 		USB_Disable();
 
 		// Disable interrupts...
