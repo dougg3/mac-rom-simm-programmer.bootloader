@@ -8,7 +8,7 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include <avr/boot.h>
-#include "LUFA/Drivers/USB/USB.h"
+#include "../SIMMProgrammer/LUFA/Drivers/USB/USB.h"
 #include "../SIMMProgrammer/cdc_device_definition.h"
 #include "../SIMMProgrammer/programmer_protocol.h"
 
