@@ -39,6 +39,10 @@ static BootloaderCommandState curCommandState = WaitingForCommand;
 static int16_t writePosInChunk = -1;
 static uint16_t curWriteIndex = 0;
 
+#define LED_On()				PORTD |= (1 << 7)
+#define LED_Off()				PORTD &= ~(1 << 7)
+#define LED_Toggle()			PIND = (1 << 7)
+
 #define PROGRAM_CHUNK_SIZE_BYTES	1024
 
 void HandleEraseWriteByte(uint8_t byte);
@@ -60,7 +64,7 @@ int main(void)
 	MCUCR = tmpMCUCR | (1 << IVSEL);
 
 	DDRD |= (1 << 7);
-	PORTD &= ~(1 << 7);
+	LED_Off();
 
 	USB_Init();
 	sei();
@@ -161,10 +165,12 @@ void HandleEraseWriteByte(uint8_t byte)
 			break;
 		case ComputerBootloaderFinish:
 			// Just to confirm that we finished writing...
+			LED_Off();
 			SendByte(BootloaderWriteOK);
 			curCommandState = WaitingForCommand;
 			break;
 		case ComputerBootloaderCancel:
+			LED_Off();
 			SendByte(BootloaderWriteConfirmCancel);
 			curCommandState = WaitingForCommand;
 			break;
@@ -175,6 +181,9 @@ void HandleEraseWriteByte(uint8_t byte)
 		programChunkBytes[writePosInChunk++] = byte;
 		if (writePosInChunk >= PROGRAM_CHUNK_SIZE_BYTES)
 		{
+			// Toggle the LED for some status
+			LED_Toggle();
+
 			// Disable interrupts while we're doing this...
 			cli();
 
