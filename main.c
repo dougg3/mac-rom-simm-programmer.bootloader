@@ -39,6 +39,7 @@ static BootloaderCommandState curCommandState = WaitingForCommand;
 static int16_t writePosInChunk = -1;
 static uint16_t curWriteIndex = 0;
 
+#define LED_Init()				DDRD |= (1 << 7)
 #define LED_On()				PORTD |= (1 << 7)
 #define LED_Off()				PORTD &= ~(1 << 7)
 #define LED_Toggle()			PIND = (1 << 7)
@@ -63,7 +64,7 @@ int main(void)
 	MCUCR = tmpMCUCR | (1 << IVCE);
 	MCUCR = tmpMCUCR | (1 << IVSEL);
 
-	DDRD |= (1 << 7);
+	LED_Init();
 	LED_Off();
 
 	USB_Init();
