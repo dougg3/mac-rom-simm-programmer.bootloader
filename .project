@@ -84,27 +84,27 @@
 		<link>
 			<name>Descriptors.c</name>
 			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/SIMMProgrammer/Descriptors.c</locationURI>
+			<locationURI>PARENT-1-PROJECT_LOC/SIMMProgrammer/hal/at90usb646/Descriptors.c</locationURI>
 		</link>
 		<link>
 			<name>Descriptors.h</name>
 			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/SIMMProgrammer/Descriptors.h</locationURI>
+			<locationURI>PARENT-1-PROJECT_LOC/SIMMProgrammer/hal/at90usb646/Descriptors.h</locationURI>
 		</link>
 		<link>
 			<name>LUFA</name>
 			<type>2</type>
-			<locationURI>PARENT-1-PROJECT_LOC/SIMMProgrammer/LUFA</locationURI>
+			<locationURI>PARENT-1-PROJECT_LOC/SIMMProgrammer/hal/at90usb646/LUFA</locationURI>
 		</link>
 		<link>
 			<name>cdc_device_definition.c</name>
 			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/SIMMProgrammer/cdc_device_definition.c</locationURI>
+			<locationURI>PARENT-1-PROJECT_LOC/SIMMProgrammer/hal/at90usb646/cdc_device_definition.c</locationURI>
 		</link>
 		<link>
 			<name>cdc_device_definition.h</name>
 			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/SIMMProgrammer/cdc_device_definition.h</locationURI>
+			<locationURI>PARENT-1-PROJECT_LOC/SIMMProgrammer/hal/at90usb646/cdc_device_definition.h</locationURI>
 		</link>
 		<link>
 			<name>programmer_protocol.h</name>

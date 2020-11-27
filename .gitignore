@@ -3,3 +3,5 @@
 /programmer_protocol.h
 /cdc_device_definition.h
 /Descriptors.c
+/Release/
+.settings/org.eclipse.cdt.core.prefs

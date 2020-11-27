@@ -4,7 +4,7 @@
  *  Created on: Dec 20, 2011
  *      Author: Doug
  *
- * Copyright (C) 2011-2012 Doug Brown
+ * Copyright (C) 2011-2020 Doug Brown
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -25,34 +25,44 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include <avr/boot.h>
-#include "../SIMMProgrammer/LUFA/Drivers/USB/USB.h"
-#include "../SIMMProgrammer/cdc_device_definition.h"
+// Grab files from the SIMMProgrammer project, checked out next to this project
+#include "../SIMMProgrammer/hal/at90usb646/LUFA/Drivers/USB/USB.h"
+#include "../SIMMProgrammer/hal/at90usb646/cdc_device_definition.h"
 #include "../SIMMProgrammer/programmer_protocol.h"
 
-typedef enum BootloaderCommandState
-{
-	WaitingForCommand = 0,
-	WritingFirmware
-} BootloaderCommandState;
-
-static BootloaderCommandState curCommandState = WaitingForCommand;
-static int16_t writePosInChunk = -1;
-static uint16_t curWriteIndex = 0;
-
-#define LED_Init()				DDRD |= (1 << 7)
-#define LED_On()				PORTD |= (1 << 7)
-#define LED_Off()				PORTD &= ~(1 << 7)
-#define LED_Toggle()			PIND = (1 << 7)
-
+/// Bitmask of the LED in its port/pin/DDR registers
+#define LED_PORT_MASK				(1 << 7)
+/// Number of bytes sent at a time during firmware programming
 #define PROGRAM_CHUNK_SIZE_BYTES	1024
 
-void HandleEraseWriteByte(uint8_t byte);
-void HandleWaitingForCommandByte(uint8_t byte);
+/// Current bootloader state
+typedef enum BootloaderCommandState
+{
+	WaitingForCommand = 0,//!< We're waiting to receive a command
+	WritingFirmware       //!< We're flashing the firmware
+} BootloaderCommandState;
 
-#define SendByte(b) CDC_Device_SendByte(&VirtualSerial_CDC_Interface, b)
-#define ReadByte() CDC_Device_ReceiveByte(&VirtualSerial_CDC_Interface)
-#define SendData(d, l) CDC_Device_SendData(&VirtualSerial_CDC_Interface, d, l)
+static void HandleEraseWriteByte(uint8_t byte);
+static void HandleWaitingForCommandByte(uint8_t byte);
+static inline void LED_Init(void);
+static inline void LED_On(void);
+static inline void LED_Off(void);
+static inline void LED_Toggle(void);
+static inline void USBCDC_SendByte(uint8_t b);
+static inline int16_t USBCDC_ReadByte(void);
+static inline void USBCDC_Flush(void);
 
+/// The current state
+static BootloaderCommandState curCommandState = WaitingForCommand;
+/// Where we are in the bootloader write process
+static int16_t writePosInChunk = -1;
+/// The current page index we are writing
+static uint16_t curWriteIndex = 0;
+
+/** Main program.
+ *
+ * @return Never; it has an infinite loop.
+ */
 int main(void)
 {
 	cli();
@@ -64,17 +74,20 @@ int main(void)
 	MCUCR = tmpMCUCR | (1 << IVCE);
 	MCUCR = tmpMCUCR | (1 << IVSEL);
 
+	// Initialize the LED, default it to off
 	LED_Init();
 	LED_Off();
 
+	// Initialize USB and enable interrupts
 	USB_Init();
 	sei();
 
+	// Run the USB task, listen for bytes, act in response.
 	while (1)
 	{
 		if (USB_DeviceState == DEVICE_STATE_Configured)
 		{
-			int16_t recvByte = ReadByte();
+			int16_t recvByte = USBCDC_ReadByte();
 
 			if (recvByte >= 0)
 			{
@@ -95,27 +108,32 @@ int main(void)
 	}
 }
 
-void HandleWaitingForCommandByte(uint8_t byte)
+/** Handler called when we receive a byte when we're waiting for a command
+ *
+ * @param byte The byte
+ */
+static void HandleWaitingForCommandByte(uint8_t byte)
 {
 	switch (byte)
 	{
 	case GetBootloaderState:
-		SendByte(CommandReplyOK);
-		SendByte(BootloaderStateInBootloader);
+		USBCDC_SendByte(CommandReplyOK);
+		USBCDC_SendByte(BootloaderStateInBootloader);
 		curCommandState = WaitingForCommand;
 		break;
 	case EnterBootloader:
-		SendByte(CommandReplyOK);
+		USBCDC_SendByte(CommandReplyOK);
 		curCommandState = WaitingForCommand;
 		break;
 	case EnterProgrammer:
-		SendByte(CommandReplyOK);
-		CDC_Device_Flush(&VirtualSerial_CDC_Interface);
+		// Send a response immediately, and flush the serial port
+		USBCDC_SendByte(CommandReplyOK);
+		USBCDC_Flush();
 
 		// Insert a small delay to ensure that it arrives before rebooting.
 		_delay_ms(1000);
 
-		// Done with the USB interface -- the programmer will re-initialize it.
+		// Done with the USB for now -- the main firmware will re-initialize it.
 		USB_Disable();
 
 		// Disable interrupts...
@@ -136,16 +154,20 @@ void HandleWaitingForCommandByte(uint8_t byte)
 		curCommandState = WritingFirmware;
 		curWriteIndex = 0;
 		writePosInChunk = -1;
-		SendByte(CommandReplyOK);
+		USBCDC_SendByte(CommandReplyOK);
 		break;
 	default:
-		SendByte(CommandReplyInvalid);
+		USBCDC_SendByte(CommandReplyInvalid);
 		curCommandState = WaitingForCommand;
 		break;
 	}
 }
 
-void HandleEraseWriteByte(uint8_t byte)
+/** Handler called when we receive a byte while we're programming firmware
+ *
+ * @param byte The byte
+ */
+static void HandleEraseWriteByte(uint8_t byte)
 {
 	static uint8_t programChunkBytes[PROGRAM_CHUNK_SIZE_BYTES];
 
@@ -157,22 +179,22 @@ void HandleEraseWriteByte(uint8_t byte)
 			writePosInChunk = 0;
 			if (curWriteIndex < 56) // 56 x 1024 byte chunks = 56K = application size
 			{
-				SendByte(BootloaderWriteOK);
+				USBCDC_SendByte(BootloaderWriteOK);
 			}
 			else
 			{
-				SendByte(BootloaderWriteError);
+				USBCDC_SendByte(BootloaderWriteError);
 			}
 			break;
 		case ComputerBootloaderFinish:
 			// Just to confirm that we finished writing...
 			LED_Off();
-			SendByte(BootloaderWriteOK);
+			USBCDC_SendByte(BootloaderWriteOK);
 			curCommandState = WaitingForCommand;
 			break;
 		case ComputerBootloaderCancel:
 			LED_Off();
-			SendByte(BootloaderWriteConfirmCancel);
+			USBCDC_SendByte(BootloaderWriteConfirmCancel);
 			curCommandState = WaitingForCommand;
 			break;
 		}
@@ -204,7 +226,7 @@ void HandleEraseWriteByte(uint8_t byte)
 				// Load the page write buffer completely with (SPM_PAGESIZE) bytes...
 				// (2 at a time)
 				int y;
-				for (y = 0; y < SPM_PAGESIZE; y+=2)
+				for (y = 0; y < SPM_PAGESIZE; y += 2)
 				{
 					uint16_t w = *dataPtr | (*(dataPtr + 1) << 8);
 					boot_page_fill_safe(thisAddress + y, w);
@@ -222,11 +244,69 @@ void HandleEraseWriteByte(uint8_t byte)
 			// Now it's safe to re-enable interrupts
 			sei();
 
-			SendByte(BootloaderWriteOK);
+			USBCDC_SendByte(BootloaderWriteOK);
 			curWriteIndex++;
 			writePosInChunk = -1;
 		}
 	}
+}
+
+/** Initializes the LED
+ *
+ */
+static inline void LED_Init(void)
+{
+	DDRD |= LED_PORT_MASK;
+}
+
+/** Turns the LED on
+ *
+ */
+static inline __attribute__((unused)) void LED_On(void)
+{
+	PORTD |= LED_PORT_MASK;
+}
+
+/** Turns the LED off
+ *
+ */
+static inline void LED_Off(void)
+{
+	PORTD &= ~LED_PORT_MASK;
+}
+
+/** Toggles the LED
+ *
+ */
+static inline void LED_Toggle(void)
+{
+	PIND = LED_PORT_MASK;
+}
+
+/** Sends a byte out the USB serial port
+ *
+ * @param b The byte
+ */
+static inline void USBCDC_SendByte(uint8_t b)
+{
+	CDC_Device_SendByte(&VirtualSerial_CDC_Interface, b);
+}
+
+/** Reads a byte from the USB serial port, if available
+ *
+ * @return The byte, or -1 if there is nothing available
+ */
+static inline int16_t USBCDC_ReadByte(void)
+{
+	return CDC_Device_ReceiveByte(&VirtualSerial_CDC_Interface);
+}
+
+/** Flushes remaining data out to the USB serial port
+ *
+ */
+static inline void USBCDC_Flush(void)
+{
+	CDC_Device_Flush(&VirtualSerial_CDC_Interface);
 }
 
 /** Event handler for the library USB Configuration Changed event. */
