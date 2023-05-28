@@ -177,7 +177,11 @@ static void HandleEraseWriteByte(uint8_t byte)
 		{
 		case ComputerBootloaderWriteMore:
 			writePosInChunk = 0;
+#if defined(__AVR_AT90USB1286__) || defined(__AVR_AT90USB1287__)
+			if (curWriteIndex < 120) // 120 x 1024 byte chunks = 120K = application size
+#else
 			if (curWriteIndex < 56) // 56 x 1024 byte chunks = 56K = application size
+#endif
 			{
 				USBCDC_SendByte(BootloaderWriteOK);
 			}
@@ -217,7 +221,7 @@ static void HandleEraseWriteByte(uint8_t byte)
 			for (x = 0; x < (PROGRAM_CHUNK_SIZE_BYTES / SPM_PAGESIZE); x++)
 			{
 				// Find the start address of this page
-				uint16_t thisAddress = curWriteIndex * PROGRAM_CHUNK_SIZE_BYTES +
+				uint32_t thisAddress = curWriteIndex * PROGRAM_CHUNK_SIZE_BYTES +
 										x * SPM_PAGESIZE;
 
 				// Erase it (safely)
