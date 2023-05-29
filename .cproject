@@ -100,7 +100,7 @@
 								<option id="de.innot.avreclipse.compiler.option.optimize.1461731059" name="Optimization Level" superClass="de.innot.avreclipse.compiler.option.optimize" useByScannerDiscovery="false" value="de.innot.avreclipse.compiler.optimize.size" valueType="enumerated"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="de.innot.avreclipse.compiler.option.def.718281409" name="Define Syms (-D)" superClass="de.innot.avreclipse.compiler.option.def" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="USB_DEVICE_ONLY"/>
-									<listOptionValue builtIn="false" value="F_USB=16000000"/>
+									<listOptionValue builtIn="false" value="F_USB=8000000"/>
 									<listOptionValue builtIn="false" value="DEVICE_STATE_AS_GPIOR=0"/>
 									<listOptionValue builtIn="false" value="ORDERED_EP_CONFIG"/>
 									<listOptionValue builtIn="false" value="FIXED_CONTROL_ENDPOINT_SIZE=8"/>
