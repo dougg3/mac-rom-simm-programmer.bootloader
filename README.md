@@ -12,6 +12,8 @@ The code is designed to build using [avr-gcc](https://gcc.gnu.org/wiki/avr-gcc) 
 
 This bootloader uses the [LUFA](http://www.fourwalledcubicle.com/LUFA.php) USB library. The code for LUFA is provided by the main [SIMM programmer firmware project](https://github.com/dougg3/mac-rom-simm-programmer). In order to build this bootloader, make sure the main SIMMProgrammer firmware project is also checked out in your Eclipse workspace.
 
+There are two build configurations: one for the AT90USB646/7 and one for the AT90USB1286/7. The global chip shortage led to the AT90USB128x being easier to procure, even though we don't need its larger flash capacity. Because it has more than 64 KB of flash and the bootloader is stored in the upper 64 KB, it needs a special version of the bootloader that can handle it properly.
+
 ## Binaries
 
 Precompiled binaries are available in the [Releases section](https://github.com/dougg3/mac-rom-simm-programmer.bootloader/releases) of this project.
@@ -37,3 +39,5 @@ avrdude	-pusb646 -cavrisp2 -Pusb -u \
     -Uhfuse:w:0xd0:m \
     -Uefuse:w:0xf8:m
 ```
+
+If you are flashing a board that has an AT90USB1286 chip, simply replace `usb646` with `usb1286` in the command above.
