@@ -221,8 +221,8 @@ static void HandleEraseWriteByte(uint8_t byte)
 			for (x = 0; x < (PROGRAM_CHUNK_SIZE_BYTES / SPM_PAGESIZE); x++)
 			{
 				// Find the start address of this page
-				uint32_t thisAddress = curWriteIndex * PROGRAM_CHUNK_SIZE_BYTES +
-										x * SPM_PAGESIZE;
+				uint32_t thisAddress = (uint32_t)curWriteIndex * (uint32_t)PROGRAM_CHUNK_SIZE_BYTES +
+										(uint32_t)x * (uint32_t)SPM_PAGESIZE;
 
 				// Erase it (safely)
 				boot_page_erase_safe(thisAddress);
@@ -233,7 +233,7 @@ static void HandleEraseWriteByte(uint8_t byte)
 				for (y = 0; y < SPM_PAGESIZE; y += 2)
 				{
 					uint16_t w = *dataPtr | (*(dataPtr + 1) << 8);
-					boot_page_fill_safe(thisAddress + y, w);
+					boot_page_fill_safe(thisAddress + (uint32_t)y, w);
 					dataPtr += 2;
 				}
 
