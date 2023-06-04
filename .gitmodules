@@ -1,0 +1,3 @@
+[submodule "SIMMProgrammer"]
+	path = SIMMProgrammer
+	url = https://github.com/dougg3/mac-rom-simm-programmer.git
