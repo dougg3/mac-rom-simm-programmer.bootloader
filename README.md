@@ -8,11 +8,24 @@ When the bootloader first boots up, it waits for instructions on what to do next
 
 ## Compiling
 
-The code is designed to build using [avr-gcc](https://gcc.gnu.org/wiki/avr-gcc) and [AVR Libc](https://www.nongnu.org/avr-libc/). It is an [Eclipse CDT](https://www.eclipse.org/cdt/) project that uses the [AVR Eclipse Plugin](http://avr-eclipse.sourceforge.net/wiki/index.php/The_AVR_Eclipse_Plugin). If you download Eclipse (with CDT) and install the AVR Eclipse plugin, it should build. You may need to add avr-gcc to your path if it's not already in the path.
+The code is designed to build using [avr-gcc](https://gcc.gnu.org/wiki/avr-gcc) and [AVR Libc](https://www.nongnu.org/avr-libc/). It can be built using either CMake or Eclipse with the [AVR Eclipse plugin](https://avr-eclipse.sourceforge.net/wiki/index.php/The_AVR_Eclipse_Plugin).
 
-This bootloader uses the [LUFA](http://www.fourwalledcubicle.com/LUFA.php) USB library. The code for LUFA is provided by the main [SIMM programmer firmware project](https://github.com/dougg3/mac-rom-simm-programmer). In order to build this bootloader, make sure the main SIMMProgrammer firmware project is also checked out in your Eclipse workspace.
+This bootloader uses the [LUFA](http://www.fourwalledcubicle.com/LUFA.php) USB library. The code for LUFA is provided by the main [SIMM programmer firmware project](https://github.com/dougg3/mac-rom-simm-programmer) as a Git submodule.
 
-There are two build configurations: one for the AT90USB646/7 and one for the AT90USB1286/7. The global chip shortage led to the AT90USB128x being easier to procure, even though we don't need its larger flash capacity. Because it has more than 64 KB of flash and the bootloader is stored in the upper 64 KB, it needs a special version of the bootloader that can handle it properly.
+To check out the project with the submodule, type the following command:
+
+`git clone --recursive https://github.com/dougg3/mac-rom-simm-programmer.bootloader.git`
+
+To build with CMake:
+
+```
+mkdir build
+cd build
+cmake -DCMAKE_TOOLCHAIN_FILE=../SIMMProgrammer/toolchain-avr.cmake -DAVR_TARGET_MCU=at90usb646 ..
+make
+```
+
+There are two build configurations: one for the AT90USB646/7 and one for the AT90USB1286/7. The global chip shortage led to the AT90USB128x being easier to procure, even though we don't need its larger flash capacity. Because it has more than 64 KB of flash and the bootloader is stored in the upper 64 KB, it needs a special version of the bootloader that can handle it properly. To build the AT90USB1286/7 variant instead, replace `at90usb646` in the cmake command above with `at90usb1286`.
 
 ## Binaries
 
