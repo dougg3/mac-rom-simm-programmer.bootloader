@@ -32,6 +32,7 @@
 // Borrowed from Nuvoton's sample code
 #define GPIO_PIN_DATA(port, pin)	(*((volatile uint32_t *)((GPIO_PIN_DATA_BASE+(0x40*(port))) + ((pin)<<2))))
 #define PB14						GPIO_PIN_DATA(1, 14)
+#define PD0							GPIO_PIN_DATA(3, 0)
 
 /// Where the LED port and pin are located
 #define LED_PORT					PB
@@ -92,8 +93,23 @@ static inline void InitHardware(void)
 	// Enable USB device controller
 	CLK->APBCLK0 |= CLK_APBCLK0_USBDCKEN_Msk;
 
-	// Enable GPIOB and ISP
-	CLK->AHBCLK |= CLK_AHBCLK_GPBCKEN_Msk | CLK_AHBCLK_ISPCKEN_Msk;
+	// Enable GPIOB, GPIOD, and ISP
+	CLK->AHBCLK |= CLK_AHBCLK_GPBCKEN_Msk | CLK_AHBCLK_GPDCKEN_Msk | CLK_AHBCLK_ISPCKEN_Msk;
+
+	// Set PD0 as pulled-up input
+	PD->PUSEL |= (0x01 << 2*0);
+
+	// Read PD0. If it's shorted to ground, we've been externally asked
+	// to enter the bootloader. This is a failsafe to make the
+	// board unbrickable if I accidentally mess up a firmware update.
+	bool bootPinAskingForBootloader = PD0 == 0;
+
+	// If we didn't find any reason above to stay in the bootloader,
+	// go ahead and jump to the main firmware.
+	if (!bootPinAskingForBootloader)
+	{
+		ResetToMainFirmware();
+	}
 }
 
 /** Initializes the LED
