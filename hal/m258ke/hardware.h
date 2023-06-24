@@ -46,6 +46,8 @@
 /// FMC command for erasing a 512-byte page of flash
 #define FMC_CMD_PAGE_ERASE			0x22
 
+void ResetToMainFirmware(void);
+
 /** Disables interrupts
  *
  */
@@ -191,12 +193,40 @@ static inline bool WriteFlash(uint8_t const *buffer, uint32_t locationInFlash)
 	return true;
 }
 
+/** Delays for about a second
+ *
+ * This is not accurate at all. I just came up with a delay loop
+ * that is close enough to 1 second. The idea is to use as little
+ * flash as possible to implement this delay function. Flash is
+ * more important than delay accuracy here since the LDROM is only
+ * 4 kilobytes in size.
+ */
+static void DelayAbout1Sec(void)
+{
+	volatile uint32_t count;
+	for (count = 0; count < 3500000; count++);
+}
+
 /** Jumps to the main firmware
  *
  */
 static inline void EnterMainFirmware(void)
 {
+	// Insert a small delay to ensure that it arrives before rebooting.
+	DelayAbout1Sec();
 
+	// Keep interrupts disabled now, we want no more USB communication
+	DisableInterrupts();
+
+	// Disconnect USB
+	USBCDC_Disable();
+
+	// Wait a little bit to let everything settle and let the program close the port after the USB disconnect
+	DelayAbout1Sec();
+	DelayAbout1Sec();
+
+	// Reset and go to the main firmware
+	ResetToMainFirmware();
 }
 
 #endif /* HAL_AT90USB646_HARDWARE_H_ */

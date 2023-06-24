@@ -22,3 +22,21 @@
  */
 
 #include "hardware.h"
+
+/** Goes to the main firmware immediately
+ *
+ */
+void ResetToMainFirmware(void)
+{
+	// Clear reset status bits so that main firmware knows reset reason
+	SYS->RSTSTS = (SYS_RSTSTS_PORF_Msk | SYS_RSTSTS_PINRF_Msk);
+
+	// Boot to APROM next time
+	FMC->ISPCTL &= ~FMC_ISPCTL_BS_Msk;
+
+	// Reset!
+	NVIC_SystemReset();
+
+	// Should never get here, but just in case...
+	while (1);
+}
