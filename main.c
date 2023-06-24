@@ -143,6 +143,7 @@ static void HandleEraseWriteByte(uint8_t byte)
 			else
 			{
 				USBCDC_SendByte(BootloaderWriteError);
+				curCommandState = WaitingForCommand;
 			}
 			break;
 		case ComputerBootloaderFinish:
