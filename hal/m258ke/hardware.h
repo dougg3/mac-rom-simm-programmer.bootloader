@@ -41,6 +41,11 @@
 /// The number of 1 KB chunks we can use for the main firmware.
 #define FIRMWARE_1KB_CHUNKS			128
 
+/// FMC command for programming 32 bits to flash
+#define FMC_CMD_32BIT_PROGRAM		0x21
+/// FMC command for erasing a 512-byte page of flash
+#define FMC_CMD_PAGE_ERASE			0x22
+
 /** Disables interrupts
  *
  */
@@ -85,8 +90,8 @@ static inline void InitHardware(void)
 	// Enable USB device controller
 	CLK->APBCLK0 |= CLK_APBCLK0_USBDCKEN_Msk;
 
-	// Enable GPIOB
-	CLK->AHBCLK |= CLK_AHBCLK_GPBCKEN_Msk;
+	// Enable GPIOB and ISP
+	CLK->AHBCLK |= CLK_AHBCLK_GPBCKEN_Msk | CLK_AHBCLK_ISPCKEN_Msk;
 }
 
 /** Initializes the LED
@@ -133,7 +138,57 @@ static inline void LED_Toggle(void)
  */
 static inline bool WriteFlash(uint8_t const *buffer, uint32_t locationInFlash)
 {
-	return false;
+	// Keep interrupts disabled while we do this.
+	DisableInterrupts();
+
+	// Enable ISP and updates to AP memory
+	FMC->ISPCTL |= FMC_ISPCTL_ISPEN_Msk | FMC_ISPCTL_APUEN_Msk;
+
+	// Each 1024-byte chunk represents two flash pages. Erase both of them...
+	for (uint32_t x = 0; x < 1024; x += 512)
+	{
+		FMC->ISPCMD = FMC_CMD_PAGE_ERASE;
+		FMC->ISPADDR = locationInFlash + x;
+		FMC->ISPTRG = FMC_ISPTRG_ISPGO_Msk;
+		__ISB();
+		while (FMC->ISPTRG & FMC_ISPTRG_ISPGO_Msk);
+
+		// Look for failures and bail
+		if (FMC->ISPCTL & FMC_ISPCTL_ISPFF_Msk)
+		{
+			FMC->ISPCTL |= FMC_ISPCTL_ISPFF_Msk;
+			return false;
+		}
+	}
+
+	// Now program all 1024 bytes, 4 at a time
+	for (uint32_t x = 0; x < 1024; x += 4)
+	{
+		FMC->ISPCMD = FMC_CMD_32BIT_PROGRAM;
+		FMC->ISPADDR = locationInFlash + x;
+		FMC->ISPDAT = ((uint32_t)buffer[x + 0] << 0) |
+					  ((uint32_t)buffer[x + 1] << 8) |
+					  ((uint32_t)buffer[x + 2] << 16) |
+					  ((uint32_t)buffer[x + 3] << 24);
+		FMC->ISPTRG = FMC_ISPTRG_ISPGO_Msk;
+		__ISB();
+		while (FMC->ISPTRG & FMC_ISPTRG_ISPGO_Msk);
+
+		// Look for failures and bail
+		if (FMC->ISPCTL & FMC_ISPCTL_ISPFF_Msk)
+		{
+			FMC->ISPCTL |= FMC_ISPCTL_ISPFF_Msk;
+			return false;
+		}
+	}
+
+	// Disable ISP and updates to AP memory
+	FMC->ISPCTL &= ~(FMC_ISPCTL_ISPEN_Msk | FMC_ISPCTL_APUEN_Msk);
+
+	// And now it's safe to re-enable interrupts
+	EnableInterrupts();
+
+	return true;
 }
 
 /** Jumps to the main firmware
