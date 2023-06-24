@@ -150,8 +150,9 @@ static inline void USBCDC_Flush(void)
  *
  * @param buffer The buffer to write to flash (this will contain 1024 bytes to write)
  * @param locationInFlash The location in flash to write it to (0 = start of program space)
+ * @return True on success, false on failure
  */
-static inline void WriteFlash(uint8_t const *buffer, uint32_t locationInFlash)
+static inline bool WriteFlash(uint8_t const *buffer, uint32_t locationInFlash)
 {
 	// Disable interrupts while we're doing this...
 	DisableInterrupts();
@@ -187,6 +188,8 @@ static inline void WriteFlash(uint8_t const *buffer, uint32_t locationInFlash)
 
 	// Now it's safe to re-enable interrupts
 	EnableInterrupts();
+
+	return true;
 }
 
 /** Jumps to the main firmware
