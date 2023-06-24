@@ -99,6 +99,16 @@ static inline void InitHardware(void)
 	// Set PD0 as pulled-up input
 	PD->PUSEL |= (0x01 << 2*0);
 
+	// Read flag from RAM to see if the main firmware asked us to stay in
+	// the bootloader (this would happen if we are doing a firmware update)
+	bool mainFirmwareAskedToStayInBootloader = false;
+	uint32_t *stayInBootloaderFlag = (uint32_t *)(0x20003FFC);
+	if (*stayInBootloaderFlag == 0xBADF00D5)
+	{
+		mainFirmwareAskedToStayInBootloader = true;
+		*stayInBootloaderFlag = 0;
+	}
+
 	// Read PD0. If it's shorted to ground, we've been externally asked
 	// to enter the bootloader. This is a failsafe to make the
 	// board unbrickable if I accidentally mess up a firmware update.
@@ -106,7 +116,7 @@ static inline void InitHardware(void)
 
 	// If we didn't find any reason above to stay in the bootloader,
 	// go ahead and jump to the main firmware.
-	if (!bootPinAskingForBootloader)
+	if (!mainFirmwareAskedToStayInBootloader && !bootPinAskingForBootloader)
 	{
 		ResetToMainFirmware();
 	}
