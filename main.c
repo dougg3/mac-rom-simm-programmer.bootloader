@@ -168,11 +168,17 @@ static void HandleEraseWriteByte(uint8_t byte)
 			LED_Toggle();
 
 			// Write the actual flash now
-			WriteFlash(programChunkBytes, (uint32_t)curWriteIndex * (uint32_t)PROGRAM_CHUNK_SIZE_BYTES);
-
-			USBCDC_SendByte(BootloaderWriteOK);
-			curWriteIndex++;
-			writePosInChunk = -1;
+			if (WriteFlash(programChunkBytes, (uint32_t)curWriteIndex * (uint32_t)PROGRAM_CHUNK_SIZE_BYTES))
+			{
+				USBCDC_SendByte(BootloaderWriteOK);
+				curWriteIndex++;
+				writePosInChunk = -1;
+			}
+			else
+			{
+				USBCDC_SendByte(BootloaderWriteError);
+				curCommandState = WaitingForCommand;
+			}
 		}
 	}
 }
