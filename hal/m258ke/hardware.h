@@ -32,6 +32,7 @@
 // Borrowed from Nuvoton's sample code
 #define GPIO_PIN_DATA(port, pin)	(*((volatile uint32_t *)((GPIO_PIN_DATA_BASE+(0x40*(port))) + ((pin)<<2))))
 #define PC9							GPIO_PIN_DATA(2, 9)
+#define PC14						GPIO_PIN_DATA(2, 14)
 
 /// Where the LED port and pin are located
 #define LED_PORT					PC
@@ -94,6 +95,21 @@ static inline void InitHardware(void)
 
 	// Enable GPIOC and ISP
 	CLK->AHBCLK |= CLK_AHBCLK_GPCCKEN_Msk | CLK_AHBCLK_ISPCKEN_Msk;
+
+	// Set PC14 as pulled-up input
+	PC->PUSEL |= (0x01 << 2*14);
+
+	// Read PC14. If it's shorted to ground, we've been externally asked
+	// to enter the bootloader. This is a failsafe to make the
+	// board unbrickable if I accidentally mess up a firmware update.
+	bool bootPinAskingForBootloader = PC14 == 0;
+
+	// If we didn't find any reason above to stay in the bootloader,
+	// go ahead and jump to the main firmware.
+	if (!bootPinAskingForBootloader)
+	{
+		ResetToMainFirmware();
+	}
 }
 
 /** Initializes the LED
