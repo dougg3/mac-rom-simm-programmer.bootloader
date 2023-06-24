@@ -78,11 +78,12 @@ static inline void InitHardware(void)
 		SYS->REGLCTL = 0x88UL;
 	} while (SYS->REGLCTL == 0UL);
 
-	// Enable 48 MHz internal high-speed RC oscillator
-	CLK->PWRCTL |= CLK_PWRCTL_HIRCEN_Msk;
+	// Enable 48 MHz internal high-speed RC oscillator and 38.4 kHz low-speed RC oscillator
+	CLK->PWRCTL |= CLK_PWRCTL_HIRCEN_Msk | CLK_PWRCTL_LIRCEN_Msk;
 
-	// Wait until it's ready
-	while (!(CLK->STATUS & CLK_STATUS_HIRCSTB_Msk));
+	// Wait until they're both ready
+	while ((CLK->STATUS & (CLK_STATUS_HIRCSTB_Msk | CLK_STATUS_LIRCSTB_Msk)) !=
+		   (CLK_STATUS_HIRCSTB_Msk | CLK_STATUS_LIRCSTB_Msk));
 
 	// Clock HCLK and USB from 48 MHz HIRC
 	CLK->CLKSEL0 = (CLK->CLKSEL0 & (~(CLK_CLKSEL0_HCLKSEL_Msk | CLK_CLKSEL0_USBDSEL_Msk))) |
@@ -109,6 +110,15 @@ static inline void InitHardware(void)
 		*stayInBootloaderFlag = 0;
 	}
 
+	// Figure out if we're booting due to a watchdog timeout
+	// (this would happen if we tried to boot the main firmware but
+	// it crashed, e.g. if there is no firmware yet or it's corrupt)
+	bool watchdogged = false;
+	if (WDT->CTL & WDT_CTL_RSTF_Msk)
+	{
+		watchdogged = true;
+	}
+
 	// Read PD0. If it's shorted to ground, we've been externally asked
 	// to enter the bootloader. This is a failsafe to make the
 	// board unbrickable if I accidentally mess up a firmware update.
@@ -116,7 +126,7 @@ static inline void InitHardware(void)
 
 	// If we didn't find any reason above to stay in the bootloader,
 	// go ahead and jump to the main firmware.
-	if (!mainFirmwareAskedToStayInBootloader && !bootPinAskingForBootloader)
+	if (!watchdogged && !mainFirmwareAskedToStayInBootloader && !bootPinAskingForBootloader)
 	{
 		ResetToMainFirmware();
 	}

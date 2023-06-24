@@ -25,9 +25,20 @@
 
 /** Goes to the main firmware immediately
  *
+ * Sets up the watchdog timer for our protection.
  */
 void ResetToMainFirmware(void)
 {
+	// Start watchdog here. If we flash an invalid firmware (or there is none),
+	// the watchdog timer will expire and we'll end up back here.
+	// If we flash a good firmware, it'll stop the WDT (or keep feeding it) and
+	// everything will be happy.
+
+	// Watchdog timer defaults to internal 38.4 kHz internal oscillator.
+	// Set timeout to 2^16 * WDT_CLK = 1.7 seconds
+	// Enable watchdog reset, also clear any existing reset flag
+	WDT->CTL = (6 << WDT_CTL_TOUTSEL_Pos) | WDT_CTL_WDTEN_Msk | WDT_CTL_RSTEN_Msk | WDT_CTL_RSTF_Msk;
+
 	// Clear reset status bits so that main firmware knows reset reason
 	SYS->RSTSTS = (SYS_RSTSTS_PORF_Msk | SYS_RSTSTS_PINRF_Msk);
 
