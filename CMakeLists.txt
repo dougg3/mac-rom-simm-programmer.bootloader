@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.13)
+enable_language(ASM)
 project(SIMMProgrammerBootloader)
 
 # Create a list of all source files common to all architectures
@@ -9,6 +10,8 @@ set(SOURCES
 # Get hardware-specific source files
 if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "avr")
 	include(hal/at90usb646/at90usb646_sources.cmake)
+elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "arm")
+	include(hal/m258ke/m258ke_sources.cmake)
 else()
 	message(FATAL_ERROR "unrecognized architecture for build")
 endif()
@@ -30,4 +33,6 @@ target_link_options(SIMMProgrammerBootloader.elf PRIVATE
 # Get hardware-specific options
 if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "avr")
 	include(hal/at90usb646/at90usb646_options.cmake)
+elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "arm")
+	include(hal/m258ke/m258ke_options.cmake)
 endif()
